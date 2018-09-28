@@ -214,7 +214,16 @@ BPF_CALL_2(bpf_get_local_storage, struct bpf_map *, map, u64, flags)
 	 * verifier checks that its value is correct.
 	 */
 	enum bpf_cgroup_storage_type stype = cgroup_storage_type(map);
-	return (unsigned long) this_cpu_read(bpf_cgroup_storage[stype]);
+	struct bpf_cgroup_storage *storage;
+	void *ptr;
+
+	storage = this_cpu_read(bpf_cgroup_storage[stype]);
+
+	if (stype == BPF_CGROUP_STORAGE_SHARED)
+		ptr = &READ_ONCE(storage->buf)->data[0];
+	else
+		ptr = this_cpu_ptr(storage->percpu_buf);
+	return (unsigned long)ptr;
 }
 
 const struct bpf_func_proto bpf_get_local_storage_proto = {

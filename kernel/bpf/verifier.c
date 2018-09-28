@@ -2347,6 +2347,7 @@ static int check_map_func_compatibility(struct bpf_verifier_env *env,
 			goto error;
 		break;
 	case BPF_MAP_TYPE_CGROUP_STORAGE:
+	case BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE:
 		if (func_id != BPF_FUNC_get_local_storage)
 			goto error;
 		break;
@@ -2440,7 +2441,8 @@ static int check_map_func_compatibility(struct bpf_verifier_env *env,
 			goto error;
 		break;
 	case BPF_FUNC_get_local_storage:
-		if (map->map_type != BPF_MAP_TYPE_CGROUP_STORAGE)
+		if (map->map_type != BPF_MAP_TYPE_CGROUP_STORAGE &&
+		    map->map_type != BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE)
 			goto error;
 		break;
 	case BPF_FUNC_sk_select_reuseport:
@@ -6157,6 +6159,12 @@ static int check_map_prog_compatibility(struct bpf_verifier_env *env,
 	return 0;
 }
 
+static bool bpf_map_is_cgroup_storage(struct bpf_map *map)
+{
+	return (map->map_type == BPF_MAP_TYPE_CGROUP_STORAGE ||
+		map->map_type == BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE);
+}
+
 /* look for pseudo eBPF instructions that access map FDs and
  * replace them with actual map pointers
  */
@@ -6247,7 +6255,7 @@ static int replace_map_fd_with_map_ptr(struct bpf_verifier_env *env)
 			}
 			env->used_maps[env->used_map_cnt++] = map;
 
-			if (map->map_type == BPF_MAP_TYPE_CGROUP_STORAGE &&
+			if (bpf_map_is_cgroup_storage(map) &&
 			    bpf_cgroup_storage_assign(env->prog, map)) {
 				verbose(env,
 					"only one cgroup storage is allowed\n");
