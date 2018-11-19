@@ -473,7 +473,7 @@ static bool btf_name_valid_identifier(const struct btf *btf, u32 offset)
 	return !*src;
 }
 
-static const char *btf_name_by_offset(const struct btf *btf, u32 offset)
+const char *btf_name_by_offset(const struct btf *btf, u32 offset)
 {
 	if (!offset)
 		return "(anon)";
@@ -483,7 +483,7 @@ static const char *btf_name_by_offset(const struct btf *btf, u32 offset)
 		return "(invalid-name-offset)";
 }
 
-static const struct btf_type *btf_type_by_id(const struct btf *btf, u32 type_id)
+const struct btf_type *btf_type_by_id(const struct btf *btf, u32 type_id)
 {
 	if (type_id > btf->nr_types)
 		return NULL;
