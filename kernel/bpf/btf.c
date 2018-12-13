@@ -473,7 +473,7 @@ static bool btf_name_valid_identifier(const struct btf *btf, u32 offset)
 	return !*src;
 }
 
-const char *btf_name_by_offset(const struct btf *btf, u32 offset)
+static const char *__btf_name_by_offset(const struct btf *btf, u32 offset)
 {
 	if (!offset)
 		return "(anon)";
@@ -481,6 +481,14 @@ const char *btf_name_by_offset(const struct btf *btf, u32 offset)
 		return &btf->strings[offset];
 	else
 		return "(invalid-name-offset)";
+}
+
+const char *btf_name_by_offset(const struct btf *btf, u32 offset)
+{
+	if (offset < btf->hdr.str_len)
+		return &btf->strings[offset];
+
+	return NULL;
 }
 
 const struct btf_type *btf_type_by_id(const struct btf *btf, u32 type_id)
@@ -553,7 +561,7 @@ __printf(4, 5) static void __btf_verifier_log_type(struct btf_verifier_env *env,
 	__btf_verifier_log(log, "[%u] %s %s%s",
 			   env->log_type_id,
 			   btf_kind_str[kind],
-			   btf_name_by_offset(btf, t->name_off),
+			   __btf_name_by_offset(btf, t->name_off),
 			   log_details ? " " : "");
 
 	if (log_details)
@@ -597,7 +605,7 @@ static void btf_verifier_log_member(struct btf_verifier_env *env,
 		btf_verifier_log_type(env, struct_type, NULL);
 
 	__btf_verifier_log(log, "\t%s type_id=%u bits_offset=%u",
-			   btf_name_by_offset(btf, member->name_off),
+			   __btf_name_by_offset(btf, member->name_off),
 			   member->type, member->offset);
 
 	if (fmt && *fmt) {
@@ -1856,7 +1864,7 @@ static s32 btf_enum_check_meta(struct btf_verifier_env *env,
 
 
 		btf_verifier_log(env, "\t%s val=%d\n",
-				 btf_name_by_offset(btf, enums[i].name_off),
+				 __btf_name_by_offset(btf, enums[i].name_off),
 				 enums[i].val);
 	}
 
@@ -1880,7 +1888,7 @@ static void btf_enum_seq_show(const struct btf *btf, const struct btf_type *t,
 	for (i = 0; i < nr_enums; i++) {
 		if (v == enums[i].val) {
 			seq_printf(m, "%s",
-				   btf_name_by_offset(btf, enums[i].name_off));
+				   __btf_name_by_offset(btf, enums[i].name_off));
 			return;
 		}
 	}
@@ -1937,17 +1945,17 @@ static void btf_func_proto_log(struct btf_verifier_env *env,
 	}
 
 	btf_verifier_log(env, "%u %s", args[0].type,
-			 btf_name_by_offset(env->btf,
+			 __btf_name_by_offset(env->btf,
 					    args[0].name_off));
 	for (i = 1; i < nr_args - 1; i++)
 		btf_verifier_log(env, ", %u %s", args[i].type,
-				 btf_name_by_offset(env->btf,
+				 __btf_name_by_offset(env->btf,
 						    args[i].name_off));
 	if (nr_args > 1) {
 		const struct btf_param *last_arg = &args[nr_args - 1];
 		if (last_arg->type)
 			btf_verifier_log(env, ", %u %s", last_arg->type,
-					 btf_name_by_offset(env->btf,
+					 __btf_name_by_offset(env->btf,
 							    last_arg->name_off));
 		else
 			btf_verifier_log(env, ", vararg");
