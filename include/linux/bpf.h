@@ -122,6 +122,9 @@ static inline void copy_map_value(struct bpf_map *map, void *dst, void *src)
 	}
 }
 
+void copy_map_value_locked(struct bpf_map *map, void *dst, void *src,
+			   bool lock_src);
+
 struct bpf_offloaded_map;
 
 struct bpf_map_dev_ops {
