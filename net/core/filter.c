@@ -3692,6 +3692,121 @@ static const struct bpf_func_proto bpf_sock_addr_sk_lookup_udp_proto = {
 	.arg5_type	= ARG_ANYTHING,
 };
 
+bool bpf_tcp_sock_is_valid_access(int off, int size, enum bpf_access_type type,
+				  struct bpf_insn_access_aux *info)
+{
+	if (off < 0 || off >= offsetofend(struct bpf_tcp_sock, bytes_acked))
+		return false;
+	if (off % size != 0)
+		return false;
+	switch (off) {
+	case offsetof(struct bpf_tcp_sock, bytes_received):
+	case offsetof(struct bpf_tcp_sock, bytes_acked):
+		return size == sizeof(__u64);
+	default:
+		return size == sizeof(__u32);
+	}
+}
+
+#define CONVERT_COMMON_TCP_SOCK_FIELDS(md_type, CONVERT)		\
+do {									\
+	switch (si->off) {						\
+	case offsetof(md_type, snd_cwnd):				\
+		CONVERT(snd_cwnd); break;				\
+	case offsetof(md_type, srtt_us):				\
+		CONVERT(srtt_us); break;				\
+	case offsetof(md_type, snd_ssthresh):				\
+		CONVERT(snd_ssthresh); break;				\
+	case offsetof(md_type, rcv_nxt):				\
+		CONVERT(rcv_nxt); break;				\
+	case offsetof(md_type, snd_nxt):				\
+		CONVERT(snd_nxt); break;				\
+	case offsetof(md_type, snd_una):				\
+		CONVERT(snd_una); break;				\
+	case offsetof(md_type, mss_cache):				\
+		CONVERT(mss_cache); break;				\
+	case offsetof(md_type, ecn_flags):				\
+		CONVERT(ecn_flags); break;				\
+	case offsetof(md_type, rate_delivered):				\
+		CONVERT(rate_delivered); break;				\
+	case offsetof(md_type, rate_interval_us):			\
+		CONVERT(rate_interval_us); break;			\
+	case offsetof(md_type, packets_out):				\
+		CONVERT(packets_out); break;				\
+	case offsetof(md_type, retrans_out):				\
+		CONVERT(retrans_out); break;				\
+	case offsetof(md_type, total_retrans):				\
+		CONVERT(total_retrans); break;				\
+	case offsetof(md_type, segs_in):				\
+		CONVERT(segs_in); break;				\
+	case offsetof(md_type, data_segs_in):				\
+		CONVERT(data_segs_in); break;				\
+	case offsetof(md_type, segs_out):				\
+		CONVERT(segs_out); break;				\
+	case offsetof(md_type, data_segs_out):				\
+		CONVERT(data_segs_out); break;				\
+	case offsetof(md_type, lost_out):				\
+		CONVERT(lost_out); break;				\
+	case offsetof(md_type, sacked_out):				\
+		CONVERT(sacked_out); break;				\
+	case offsetof(md_type, bytes_received):				\
+		CONVERT(bytes_received); break;				\
+	case offsetof(md_type, bytes_acked):				\
+		CONVERT(bytes_acked); break;				\
+	}								\
+} while (0)
+
+u32 bpf_tcp_sock_convert_ctx_access(enum bpf_access_type type,
+				    const struct bpf_insn *si,
+				    struct bpf_insn *insn_buf,
+				    struct bpf_prog *prog, u32 *target_size)
+{
+	struct bpf_insn *insn = insn_buf;
+
+#define BPF_TCP_SOCK_GET_COMMON(FIELD)					\
+	do {								\
+		BUILD_BUG_ON(FIELD_SIZEOF(struct tcp_sock, FIELD) >	\
+			     FIELD_SIZEOF(struct bpf_tcp_sock, FIELD));	\
+		*insn++ = BPF_LDX_MEM(BPF_FIELD_SIZEOF(struct tcp_sock, FIELD),\
+				      si->dst_reg, si->src_reg,		\
+				      offsetof(struct tcp_sock, FIELD)); \
+	} while (0)
+	CONVERT_COMMON_TCP_SOCK_FIELDS(struct bpf_tcp_sock,
+				       BPF_TCP_SOCK_GET_COMMON);
+	if (insn > insn_buf)
+		return insn - insn_buf;
+
+	switch (si->off) {
+	case offsetof(struct bpf_tcp_sock, rtt_min):
+		BUILD_BUG_ON(FIELD_SIZEOF(struct tcp_sock, rtt_min) !=
+			     sizeof(struct minmax));
+		BUILD_BUG_ON(sizeof(struct minmax) <
+			     sizeof(struct minmax_sample));
+		*insn++ = BPF_LDX_MEM(BPF_W, si->dst_reg, si->src_reg,
+				      offsetof(struct tcp_sock, rtt_min) +
+				      offsetof(struct minmax_sample, v));
+		break;
+	}
+	return insn - insn_buf;
+}
+
+BPF_CALL_1(bpf_tcp_sock, struct sock *, sk)
+{
+	sk = sk_to_full_sk(sk);
+
+	if (sk_fullsock(sk) && sk->sk_protocol == IPPROTO_TCP)
+		return (unsigned long)sk;
+
+	return (unsigned long)NULL;
+}
+
+static const struct bpf_func_proto bpf_tcp_sock_proto = {
+	.func		= bpf_tcp_sock,
+	.gpl_only	= false,
+	.ret_type	= RET_PTR_TO_TCP_SOCK_OR_NULL,
+	.arg1_type	= ARG_PTR_TO_SOCK_COMMON,
+};
+
 #endif /* CONFIG_INET */
 
 static unsigned long bpf_skb_copy(void *dst_buff, const void *skb,
@@ -5182,6 +5297,10 @@ cg_skb_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
 		return &bpf_get_local_storage_proto;
 	case BPF_FUNC_sk_fullsock:
 		return &bpf_sk_fullsock_proto;
+#ifdef CONFIG_INET
+	case BPF_FUNC_tcp_sock:
+		return &bpf_tcp_sock_proto;
+#endif
 	default:
 		return sk_filter_func_proto(func_id, prog);
 	}
@@ -5273,6 +5392,8 @@ tc_cls_act_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
 		return &bpf_sk_lookup_udp_proto;
 	case BPF_FUNC_sk_release:
 		return &bpf_sk_release_proto;
+	case BPF_FUNC_tcp_sock:
+		return &bpf_tcp_sock_proto;
 	default:
 		return bpf_base_func_proto(func_id);
 	}
