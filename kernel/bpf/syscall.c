@@ -1658,6 +1658,8 @@ static int bpf_prog_attach(const union bpf_attr *attr)
 		break;
 	case BPF_LIRC_MODE2:
 		ptype = BPF_PROG_TYPE_LIRC_MODE2;
+	case BPF_CGROUP_SYSCTL:
+		ptype = BPF_PROG_TYPE_CGROUP_SYSCTL;
 		break;
 	default:
 		return -EINVAL;
@@ -1736,6 +1738,9 @@ static int bpf_prog_detach(const union bpf_attr *attr)
 		return skb_flow_dissector_bpf_prog_detach(attr);
 	case BPF_LIRC_MODE2:
 		return lirc_prog_detach(attr);
+	case BPF_CGROUP_SYSCTL:
+		ptype = BPF_PROG_TYPE_CGROUP_SYSCTL;
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -1771,6 +1776,7 @@ static int bpf_prog_query(const union bpf_attr *attr,
 	case BPF_CGROUP_UDP6_RECVMSG:
 	case BPF_CGROUP_SOCK_OPS:
 	case BPF_CGROUP_DEVICE:
+	case BPF_CGROUP_SYSCTL:
 		break;
 	case BPF_LIRC_MODE2:
 		return lirc_prog_query(attr, uattr);
