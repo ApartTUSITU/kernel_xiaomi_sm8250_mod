@@ -298,6 +298,8 @@ struct bpf_stack_build_id {
 		__u64	ip;
 	};
 };
+/* Flags for accessing BPF object from program side. */
+#define BPF_F_RDONLY_PROG	(1U << 7)
 
 union bpf_attr {
 	struct { /* anonymous struct used by BPF_MAP_CREATE command */
