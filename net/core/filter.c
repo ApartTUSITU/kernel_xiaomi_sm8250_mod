@@ -3238,20 +3238,6 @@ void xdp_do_flush_map(void)
 }
 EXPORT_SYMBOL_GPL(xdp_do_flush_map);
 
-static void *__xdp_map_lookup_elem(struct bpf_map *map, u32 index)
-{
-	switch (map->map_type) {
-	case BPF_MAP_TYPE_DEVMAP:
-		return __dev_map_lookup_elem(map, index);
-	case BPF_MAP_TYPE_CPUMAP:
-		return __cpu_map_lookup_elem(map, index);
-	case BPF_MAP_TYPE_XSKMAP:
-		return __xsk_map_lookup_elem(map, index);
-	default:
-		return NULL;
-	}
-}
-
 void bpf_clear_redirect_map(struct bpf_map *map)
 {
 	struct bpf_redirect_info *ri;
@@ -3280,7 +3266,10 @@ static int xdp_do_redirect_map(struct net_device *dev, struct xdp_buff *xdp,
 	ri->ifindex = 0;
 	WRITE_ONCE(ri->map, NULL);
 
-	fwd = __xdp_map_lookup_elem(map, index);
+	if (map->map_type == BPF_MAP_TYPE_DEVMAP)
+		fwd = __dev_map_lookup_elem(map, index);
+	else if (map->map_type == BPF_MAP_TYPE_DEVMAP_HASH)
+		fwd = __dev_map_hash_lookup_elem(map, index);
 	if (!fwd) {
 		err = -EINVAL;
 		goto err;
@@ -3345,7 +3334,11 @@ static int xdp_do_generic_redirect_map(struct net_device *dev,
 	ri->ifindex = 0;
 	WRITE_ONCE(ri->map, NULL);
 
-	fwd = __xdp_map_lookup_elem(map, index);
+	if (map->map_type == BPF_MAP_TYPE_DEVMAP)
+		fwd = __dev_map_lookup_elem(map, index);
+	else if (map->map_type == BPF_MAP_TYPE_DEVMAP_HASH)
+		fwd = __dev_map_hash_lookup_elem(map, index);
+
 	if (unlikely(!fwd)) {
 		err = -EINVAL;
 		goto err;
