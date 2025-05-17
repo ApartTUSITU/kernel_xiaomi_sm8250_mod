@@ -32,6 +32,7 @@
 #include <linux/ctype.h>
 #include <linux/btf.h>
 #include <linux/nospec.h>
+#include <linux/poll.h>
 
 #define IS_FD_ARRAY(map) ((map)->map_type == BPF_MAP_TYPE_PROG_ARRAY || \
 			   (map)->map_type == BPF_MAP_TYPE_PERF_EVENT_ARRAY || \
@@ -197,6 +198,34 @@ static int bpf_charge_memlock(struct user_struct *user, u32 pages)
 static void bpf_uncharge_memlock(struct user_struct *user, u32 pages)
 {
 	atomic_long_sub(pages, &user->locked_vm);
+}
+
+int bpf_map_charge_init(struct bpf_map_memory *mem, u64 size)
+{
+    u32 pages = round_up(size, PAGE_SIZE) >> PAGE_SHIFT;
+    struct user_struct *user;
+    int ret;
+
+    if (size >= U32_MAX - PAGE_SIZE)
+        return -E2BIG;
+
+    user = get_current_user();
+    ret = bpf_charge_memlock(user, pages);
+    if (ret) {
+        free_uid(user);   
+        return ret;    
+    }
+
+    mem->pages = pages;
+    mem->user = user;
+
+    return 0;
+}
+
+void bpf_map_charge_finish(struct bpf_map_memory *mem)
+{
+    bpf_uncharge_memlock(mem->user, mem->pages);
+    free_uid(mem->user);
 }
 
 static int bpf_map_init_memlock(struct bpf_map *map)
@@ -394,6 +423,16 @@ static ssize_t bpf_dummy_write(struct file *filp, const char __user *buf,
 	return -EINVAL;
 }
 
+static __poll_t bpf_map_poll(struct file *filp, struct poll_table_struct *pts)
+{
+	struct bpf_map *map = filp->private_data;
+
+	if (map->ops->map_poll)
+		return map->ops->map_poll(map, filp, pts);
+
+	return EPOLLERR;
+}
+
 const struct file_operations bpf_map_fops = {
 #ifdef CONFIG_PROC_FS
 	.show_fdinfo	= bpf_map_show_fdinfo,
@@ -401,6 +440,7 @@ const struct file_operations bpf_map_fops = {
 	.release	= bpf_map_release,
 	.read		= bpf_dummy_read,
 	.write		= bpf_dummy_write,
+	.poll		= bpf_map_poll,
 };
 
 int bpf_map_new_fd(struct bpf_map *map, int flags)

@@ -16,6 +16,7 @@
 #include <linux/rbtree_latch.h>
 #include <linux/numa.h>
 #include <linux/wait.h>
+#include <linux/poll.h>
 
 struct bpf_verifier_env;
 struct perf_event;
@@ -64,6 +65,14 @@ struct bpf_map_ops {
 				     u64 *imm, u32 off);
 	int (*map_direct_value_meta)(const struct bpf_map *map,
 				     u64 imm, u32 *off);
+	int (*map_mmap)(struct bpf_map *map, struct vm_area_struct *vma);
+	__poll_t (*map_poll)(struct bpf_map *map, struct file *filp,
+			     struct poll_table_struct *pts);
+};
+
+struct bpf_map_memory {
+    u32 pages;
+    struct user_struct *user;
 };
 
 struct bpf_map {
@@ -86,6 +95,7 @@ struct bpf_map {
 	u32 btf_key_type_id;
 	u32 btf_value_type_id;
 	struct btf *btf;
+    struct bpf_map_memory memory;
 	u32 pages;
 	bool unpriv_array;
 	/* 51 bytes hole */
@@ -206,6 +216,9 @@ enum bpf_arg_type {
 	ARG_PTR_TO_INT,		/* pointer to int */
 	ARG_PTR_TO_LONG,	/* pointer to long */
 	ARG_PTR_TO_SOCKET,	/* pointer to bpf_sock (fullsock) */
+	ARG_PTR_TO_ALLOC_MEM = 19,	/* pointer to dynamically allocated memory */
+	ARG_PTR_TO_ALLOC_MEM_OR_NULL = 20,	/* pointer to dynamically allocated memory or NULL */
+	ARG_CONST_ALLOC_SIZE_OR_ZERO = 21,	/* number of allocated bytes requested */
 };
 
 /* type of values returned from helper functions */
@@ -217,6 +230,7 @@ enum bpf_return_type {
 	RET_PTR_TO_SOCKET_OR_NULL,	/* returns a pointer to a socket or NULL */
 	RET_PTR_TO_TCP_SOCK_OR_NULL,	/* returns a pointer to a tcp_sock or NULL */
 	RET_PTR_TO_SOCK_COMMON_OR_NULL,	/* returns a pointer to a sock_common or NULL */
+	RET_PTR_TO_ALLOC_MEM_OR_NULL,	/* returns a pointer to dynamically allocated memory or NULL */
 };
 
 /* eBPF function prototype used by verifier to allow BPF_CALLs from eBPF programs
@@ -275,6 +289,8 @@ enum bpf_reg_type {
 	PTR_TO_TCP_SOCK,	 /* reg points to struct tcp_sock */
 	PTR_TO_TCP_SOCK_OR_NULL, /* reg points to struct tcp_sock or NULL */
 	PTR_TO_TP_BUFFER,	 /* reg points to a writable raw tp's buffer */
+	PTR_TO_MEM = 21,		 /* reg points to valid memory region */
+	PTR_TO_MEM_OR_NULL = 22,	 /* reg points to valid memory region or NULL */
 };
 
 /* The information passed from prog-specific *_is_valid_access
@@ -554,6 +570,8 @@ void bpf_map_put(struct bpf_map *map);
 int bpf_map_precharge_memlock(u32 pages);
 int bpf_map_charge_memlock(struct bpf_map *map, u32 pages);
 void bpf_map_uncharge_memlock(struct bpf_map *map, u32 pages);
+int bpf_map_charge_init(struct bpf_map_memory *mem, u64 size);
+void bpf_map_charge_finish(struct bpf_map_memory *mem);
 void *bpf_map_area_alloc(size_t size, int numa_node);
 void bpf_map_area_free(void *base);
 void bpf_map_init_from_attr(struct bpf_map *map, union bpf_attr *attr);
@@ -940,6 +958,11 @@ extern const struct bpf_func_proto bpf_sk_redirect_hash_proto;
 extern const struct bpf_func_proto bpf_sk_redirect_map_proto;
 extern const struct bpf_func_proto bpf_get_local_storage_proto;
 extern const struct bpf_func_proto bpf_tcp_sock_proto;
+extern const struct bpf_func_proto bpf_ringbuf_output_proto;
+extern const struct bpf_func_proto bpf_ringbuf_reserve_proto;
+extern const struct bpf_func_proto bpf_ringbuf_submit_proto;
+extern const struct bpf_func_proto bpf_ringbuf_discard_proto;
+extern const struct bpf_func_proto bpf_ringbuf_query_proto;
 
 /* Shared helpers among cBPF and eBPF. */
 void bpf_user_rnd_init_once(void);
