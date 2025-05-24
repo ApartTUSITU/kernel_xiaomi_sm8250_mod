@@ -224,7 +224,7 @@ static inline bool bpf_verifier_log_full(const struct bpf_verifier_log *log)
 
 static inline bool bpf_verifier_log_needed(const struct bpf_verifier_log *log)
 {
-	return log->level && log->ubuf && !bpf_verifier_log_full(log);
+	return log->level && log->kbuf && log->ubuf && !bpf_verifier_log_full(log);
 }
 
 #define BPF_MAX_SUBPROGS 256
