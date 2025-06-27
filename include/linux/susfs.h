@@ -8,7 +8,7 @@
 #include <linux/path.h>
 #include <linux/susfs_def.h>
 
-#define SUSFS_VERSION "v1.5.7"
+#define SUSFS_VERSION "v1.5.8"
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
 #define SUSFS_VARIANT "NON-GKI"
 #else
@@ -29,12 +29,24 @@
 struct st_susfs_sus_path {
 	unsigned long                    target_ino;
 	char                             target_pathname[SUSFS_MAX_LEN_PATHNAME];
+	unsigned int                     i_uid;
 };
 
-struct st_susfs_sus_path_hlist {
-	unsigned long                    target_ino;
+struct st_susfs_sus_path_list {
+	struct list_head                 list;
+	struct st_susfs_sus_path         info;
 	char                             target_pathname[SUSFS_MAX_LEN_PATHNAME];
-	struct hlist_node                node;
+	size_t                           path_len;
+};
+
+struct st_android_data_path {
+	char                             pathname[SUSFS_MAX_LEN_PATHNAME];
+	bool                             is_inited;
+};
+
+struct st_sdcard_path {
+	char                             pathname[SUSFS_MAX_LEN_PATHNAME];
+	bool                             is_inited;
 };
 #endif
 
@@ -127,8 +139,8 @@ struct st_sus_su {
 /***********************/
 /* sus_path */
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
+int susfs_set_i_state_on_external_dir(char __user* user_info, int cmd);
 int susfs_add_sus_path(struct st_susfs_sus_path* __user user_info);
-int susfs_sus_ino_for_filldir64(unsigned long ino);
 #endif
 /* sus_mount */
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
