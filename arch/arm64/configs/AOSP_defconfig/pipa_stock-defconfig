@@ -6581,3 +6581,7 @@ CONFIG_RMNET_SHS=m
 # CONFIG_TECHPACK_CAMERA_XIAOMI is not set
 # CONFIG_TECHPACK_CAMERA_XIAOMI_CAS is not set
 CONFIG_TECHPACK_CAMERA_XIAOMI_TABLET=y
+
+CONFIG_BPF_LSM=y
+CONFIG_BPF_PRELOAD=y
+CONFIG_LSM="lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmour,bpf"
