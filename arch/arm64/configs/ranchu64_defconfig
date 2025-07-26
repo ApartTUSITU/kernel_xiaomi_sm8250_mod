@@ -307,3 +307,7 @@ CONFIG_DEBUG_RODATA=y
 CONFIG_SECURITY=y
 CONFIG_SECURITY_NETWORK=y
 CONFIG_SECURITY_SELINUX=y
+
+CONFIG_BPF_LSM=y
+CONFIG_BPF_PRELOAD=y
+CONFIG_LSM="lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmour,bpf"

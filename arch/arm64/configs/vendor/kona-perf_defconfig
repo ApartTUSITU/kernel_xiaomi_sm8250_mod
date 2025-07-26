@@ -740,3 +740,7 @@ CONFIG_CORESIGHT_HWEVENT=y
 CONFIG_CORESIGHT_DUMMY=y
 CONFIG_CORESIGHT_REMOTE_ETM=y
 CONFIG_CORESIGHT_TGU=y
+
+CONFIG_BPF_LSM=y
+CONFIG_BPF_PRELOAD=y
+CONFIG_LSM="lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmour,bpf"

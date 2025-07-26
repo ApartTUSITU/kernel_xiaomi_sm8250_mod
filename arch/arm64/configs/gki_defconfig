@@ -521,3 +521,7 @@ CONFIG_PANIC_TIMEOUT=5
 CONFIG_SCHEDSTATS=y
 # CONFIG_DEBUG_PREEMPT is not set
 CONFIG_DEBUG_LIST=y
+
+CONFIG_BPF_LSM=y
+CONFIG_BPF_PRELOAD=y
+CONFIG_LSM="lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmour,bpf"
