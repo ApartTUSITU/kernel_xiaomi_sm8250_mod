@@ -2074,6 +2074,10 @@ int bpf_prog_array_update_at(struct bpf_prog_array *array, int index,
 {
 	struct bpf_prog_array_item *item;
 
+	/* Do not allow extension programs to be inserted into prog_array. */
+	if (prog && prog->type == BPF_PROG_TYPE_EXT)
+		return -EINVAL;
+
 	if (unlikely(index < 0))
 		return -EINVAL;
 
@@ -2124,6 +2128,12 @@ int bpf_prog_array_copy(struct bpf_prog_array *old_array,
 	new_prog_cnt = carry_prog_cnt;
 	if (include_prog)
 		new_prog_cnt += 1;
+
+	/* Disallow copying an extension program into a prog_array. */
+	if (include_prog && include_prog->type == BPF_PROG_TYPE_EXT) {
+		bpf_warn("refusing to include BPF_PROG_TYPE_EXT in prog_array\n");
+		return -EINVAL;
+	}
 
 	/* Do we have any prog (not NULL) in the new array? */
 	if (!new_prog_cnt) {
