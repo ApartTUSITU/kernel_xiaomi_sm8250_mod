@@ -1,4 +1,4 @@
-name: Build All Devices Kernel (Matrix Parallel)
+name: Build All Devices Kernel (Matrix Parallel + Release)
 
 on:
   workflow_dispatch:
@@ -38,11 +38,48 @@ jobs:
       run: |
         bash build.sh ${{ matrix.device }} ksu
 
-    - name: Upload artifacts for ${{ matrix.device }}
+    - name: Upload flashable zips for ${{ matrix.device }}
       uses: actions/upload-artifact@v4
       with:
         name: kernel-${{ matrix.device }}
         path: |
           *.zip
-          out/arch/arm64/boot/Image
-          out/arch/arm64/boot/dtb
+
+  release:
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: dist
+
+    - name: Show collected files
+      run: ls -R dist
+
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: build-${{ steps.date.outputs.date }}
+        name: Kernel Build ${{ steps.date.outputs.date }}
+        body: |
+          自动构建的刷机内核包，基于 commit ${{ github.sha }}。
+          每个设备包含：
+          - AOSP NoKernelSU
+          - MIUI NoKernelSU
+          - AOSP KSU
+          - MIUI KSU
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload release assets
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: build-${{ steps.date.outputs.date }}
+        files: dist/**/*.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
