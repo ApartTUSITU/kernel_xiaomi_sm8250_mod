@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        device: [psyche, thyme, umi, munch, lmi, cmi, cas, apollo, alioth, elish, enuma, dagu, pipa]
+        device: [psyche, umi, munch, lmi, cmi, cas, alioth, elish, enuma, dagu, pipa]
 
     steps:
     - name: Checkout source
