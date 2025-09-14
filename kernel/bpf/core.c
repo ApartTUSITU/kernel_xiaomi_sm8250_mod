@@ -2131,7 +2131,7 @@ int bpf_prog_array_copy(struct bpf_prog_array *old_array,
 
 	/* Disallow copying an extension program into a prog_array. */
 	if (include_prog && include_prog->type == BPF_PROG_TYPE_EXT) {
-		pr_warn_ratelimited("refusing to include BPF_PROG_TYPE_EXT in prog_array\n");
+		bpf_warn("refusing to include BPF_PROG_TYPE_EXT in prog_array\n");
 		return -EINVAL;
 	}
 
