@@ -1061,9 +1061,37 @@ int __cgroup_bpf_run_filter_skb(struct sock *sk,
 	bpf_compute_and_save_data_end(skb, &saved_data_end);
 
 	if (type == BPF_CGROUP_INET_EGRESS) {
+		struct bpf_prog_array *array;
+
+		rcu_read_lock();
+		array = rcu_dereference(cgrp->bpf.effective[type]);
+		rcu_read_unlock();
+
+		if (!array) {
+			/* nothing attached: restore skb and continue normally */
+			bpf_restore_data_end(skb, saved_data_end);
+			__skb_pull(skb, offset);
+			skb->sk = save_sk;
+			return NET_XMIT_SUCCESS;
+		}
+
 		ret = BPF_PROG_CGROUP_INET_EGRESS_RUN_ARRAY(
 			cgrp->bpf.effective[type], skb, __bpf_prog_run_save_cb);
 	} else {
+		struct bpf_prog_array *array;
+
+		rcu_read_lock();
+		array = rcu_dereference(cgrp->bpf.effective[type]);
+		rcu_read_unlock();
+
+		if (!array) {
+			/* nothing attached: restore skb and continue normally */
+			bpf_restore_data_end(skb, saved_data_end);
+			__skb_pull(skb, offset);
+			skb->sk = save_sk;
+			return 0;
+		}
+
 		ret = BPF_PROG_RUN_ARRAY(cgrp->bpf.effective[type], skb,
 					  __bpf_prog_run_save_cb);
 		ret = (ret == 1 ? 0 : -EPERM);
@@ -1094,6 +1122,17 @@ int __cgroup_bpf_run_filter_sk(struct sock *sk,
 {
 	struct cgroup *cgrp = sock_cgroup_ptr(&sk->sk_cgrp_data);
 	int ret;
+
+	{
+		struct bpf_prog_array *array;
+
+		rcu_read_lock();
+		array = rcu_dereference(cgrp->bpf.effective[type]);
+		rcu_read_unlock();
+
+		if (!array)
+			return 0;
+	}
 
 	ret = BPF_PROG_RUN_ARRAY(cgrp->bpf.effective[type], sk, BPF_PROG_RUN);
 	return ret == 1 ? 0 : -EPERM;
@@ -1139,9 +1178,20 @@ int __cgroup_bpf_run_filter_sock_addr(struct sock *sk,
 	}
 
 	cgrp = sock_cgroup_ptr(&sk->sk_cgrp_data);
-	ret = BPF_PROG_RUN_ARRAY(cgrp->bpf.effective[type], &ctx, BPF_PROG_RUN);
+		{
+			struct bpf_prog_array *array;
 
-	return ret == 1 ? 0 : -EPERM;
+			rcu_read_lock();
+			array = rcu_dereference(cgrp->bpf.effective[type]);
+			rcu_read_unlock();
+
+			if (!array)
+				return 0;
+		}
+
+		ret = BPF_PROG_RUN_ARRAY(cgrp->bpf.effective[type], &ctx, BPF_PROG_RUN);
+
+		return ret == 1 ? 0 : -EPERM;
 }
 EXPORT_SYMBOL(__cgroup_bpf_run_filter_sock_addr);
 
@@ -1168,6 +1218,17 @@ int __cgroup_bpf_run_filter_sock_ops(struct sock *sk,
 	struct cgroup *cgrp = sock_cgroup_ptr(&sk->sk_cgrp_data);
 	int ret;
 
+	{
+		struct bpf_prog_array *array;
+
+		rcu_read_lock();
+		array = rcu_dereference(cgrp->bpf.effective[type]);
+		rcu_read_unlock();
+
+		if (!array)
+			return 0;
+	}
+
 	ret = BPF_PROG_RUN_ARRAY(cgrp->bpf.effective[type], sock_ops,
 				 BPF_PROG_RUN);
 	return ret == 1 ? 0 : -EPERM;
@@ -1187,6 +1248,16 @@ int __cgroup_bpf_check_dev_permission(short dev_type, u32 major, u32 minor,
 
 	rcu_read_lock();
 	cgrp = task_dfl_cgroup(current);
+	{
+		struct bpf_prog_array *array;
+
+		array = rcu_dereference(cgrp->bpf.effective[type]);
+		if (!array) {
+			rcu_read_unlock();
+			return !1; /* no prog: allow */
+		}
+	}
+
 	allow = BPF_PROG_RUN_ARRAY(cgrp->bpf.effective[type], &ctx,
 				   BPF_PROG_RUN);
 	rcu_read_unlock();
