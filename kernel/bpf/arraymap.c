@@ -806,12 +806,6 @@ static void *prog_fd_array_get_ptr(struct bpf_map *map,
 	if (IS_ERR(prog))
 		return prog;
 
-	/* Do not allow extension programs to be inserted into prog_array */
-	if (prog->type == BPF_PROG_TYPE_EXT) {
-		bpf_prog_put(prog);
-		return ERR_PTR(-EINVAL);
-	}
-
 	if (!bpf_prog_array_compatible(array, prog)) {
 		bpf_prog_put(prog);
 		return ERR_PTR(-EINVAL);

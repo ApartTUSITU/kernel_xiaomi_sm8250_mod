@@ -4075,21 +4075,6 @@ static int link_create(union bpf_attr *attr)
 		goto out;
 
 	if (prog->type == BPF_PROG_TYPE_EXT) {
-		/* If creating an extension, ensure the target prog is not in a prog_array */
-		if (attr->link_create.target_fd) {
-			struct bpf_prog *tgt = bpf_prog_get(attr->link_create.target_fd);
-			if (IS_ERR(tgt)) {
-				ret = PTR_ERR(tgt);
-				goto out;
-			}
-			/* bpf_check_tail_call returns -EINVAL if target is incompatible */
-			if (bpf_check_tail_call(tgt)) {
-				bpf_prog_put(tgt);
-				ret = -EINVAL;
-				goto out;
-			}
-			bpf_prog_put(tgt);
-		}
 		ret = tracing_bpf_link_attach(attr, prog);
 		goto out;
 	}
