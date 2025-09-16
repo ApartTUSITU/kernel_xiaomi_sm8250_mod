@@ -77,6 +77,7 @@ Join Starwing's QQ Group: **459094061**
 | lmi                 | Redmi K30 Pro / POCO F2 Pro       |
 | cmi                 | Xiaomi 10 Pro                     |
 | cas                 | Xiaomi 10 Ultra                   |
+| apollo              | Xiaomi 10T / Redmi K30S Ultra
 | alioth              | Xiaomi 11X / POCO F3 / Redmi K40  |
 | elish               | Xiaomi Pad 5 Pro                  |
 | enuma               | Xiaomi Pad 5 Pro 5G               |
