@@ -1081,19 +1081,13 @@ int bpf_prog_array_copy(struct bpf_prog_array *old_array,
 		_array = rcu_dereference(array);	\
 		if (unlikely(check_non_null && !_array))\
 			goto _out;			\
-		/* 添加额外的安全检查 */		\
-		if (unlikely(!_array || !_array->items)) \
-			goto _out;			\
 		_item = &_array->items[0];		\
 		while ((_prog = READ_ONCE(_item->prog))) {		\
-			/* 检查程序指针是否有效 */	\
-			if (unlikely(!_prog || (unsigned long)_prog == 0xdead000000000100UL)) \
-				break;			\
-			if (!set_cg_storage) {		\
+			if (!set_cg_storage) {			\
 				_ret &= func(_prog, ctx);	\
-			} else {			\
+			} else {				\
 				if (unlikely(bpf_cgroup_storage_set(_item->cgroup_storage)))	\
-					break;		\
+					break;			\
 				_ret &= func(_prog, ctx);	\
 				bpf_cgroup_storage_unset();	\
 			}				\

@@ -1036,7 +1036,6 @@ int cgroup_bpf_prog_query(const union bpf_attr *attr,
  * attached program was found and if it returned != 1 during execution.
  * Otherwise 0 is returned.
  */
-// 在 __cgroup_bpf_run_filter_skb 函数中添加安全检查
 int __cgroup_bpf_run_filter_skb(struct sock *sk,
 				struct sk_buff *skb,
 				enum bpf_attach_type type)
@@ -1045,7 +1044,6 @@ int __cgroup_bpf_run_filter_skb(struct sock *sk,
 	struct sock *save_sk;
 	void *saved_data_end;
 	struct cgroup *cgrp;
-	struct bpf_prog_array *prog_array;
 	int ret;
 
 	if (!sk || !sk_fullsock(sk))
@@ -1055,21 +1053,6 @@ int __cgroup_bpf_run_filter_skb(struct sock *sk,
 		return 0;
 
 	cgrp = sock_cgroup_ptr(&sk->sk_cgrp_data);
-	
-	// 添加 RCU 读锁和安全检查
-	rcu_read_lock();
-	prog_array = rcu_dereference(cgrp->bpf.effective[type]);
-	if (unlikely(!prog_array)) {
-		rcu_read_unlock();
-		return 0;
-	}
-	
-	// 检查程序数组是否有效
-	if (unlikely(bpf_prog_array_is_empty(prog_array))) {
-		rcu_read_unlock();
-		return 0;
-	}
-	
 	save_sk = skb->sk;
 	skb->sk = sk;
 	__skb_push(skb, offset);
@@ -1079,9 +1062,9 @@ int __cgroup_bpf_run_filter_skb(struct sock *sk,
 
 	if (type == BPF_CGROUP_INET_EGRESS) {
 		ret = BPF_PROG_CGROUP_INET_EGRESS_RUN_ARRAY(
-			prog_array, skb, __bpf_prog_run_save_cb);
+			cgrp->bpf.effective[type], skb, __bpf_prog_run_save_cb);
 	} else {
-		ret = BPF_PROG_RUN_ARRAY(prog_array, skb,
+		ret = BPF_PROG_RUN_ARRAY(cgrp->bpf.effective[type], skb,
 					  __bpf_prog_run_save_cb);
 		ret = (ret == 1 ? 0 : -EPERM);
 	}
@@ -1089,7 +1072,6 @@ int __cgroup_bpf_run_filter_skb(struct sock *sk,
 	__skb_pull(skb, offset);
 	skb->sk = save_sk;
 
-	rcu_read_unlock();
 	return ret;
 }
 EXPORT_SYMBOL(__cgroup_bpf_run_filter_skb);
