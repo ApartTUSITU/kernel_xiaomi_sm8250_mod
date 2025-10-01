@@ -1043,6 +1043,7 @@ int __cgroup_bpf_run_filter_skb(struct sock *sk,
 	unsigned int offset = skb->data - skb_network_header(skb);
 	struct sock *save_sk;
 	void *saved_data_end;
+	struct bpf_prog_array *prog_array;
 	struct cgroup *cgrp;
 	int ret;
 
@@ -1052,7 +1053,22 @@ int __cgroup_bpf_run_filter_skb(struct sock *sk,
 	if (sk->sk_family != AF_INET && sk->sk_family != AF_INET6)
 		return 0;
 
-	cgrp = sock_cgroup_ptr(&sk->sk_cgrp_data);
+	/* Get cgroup pointer - it should never be NULL for a valid socket */
+ 	cgrp = sock_cgroup_ptr(&sk->sk_cgrp_data);
+	if (unlikely(!cgrp))
+		return 0;
+
+	/* Check if the effective prog array exists before accessing it.
+	 * This prevents null pointer dereference during cgroup initialization
+	 * or teardown when the prog array may not be set up yet.
+	 */
+	rcu_read_lock();
+	prog_array = rcu_dereference(cgrp->bpf.effective[type]);
+	if (unlikely(!prog_array)) {
+		rcu_read_unlock();
+		return 0;
+	}
+
 	save_sk = skb->sk;
 	skb->sk = sk;
 	__skb_push(skb, offset);
@@ -1060,14 +1076,17 @@ int __cgroup_bpf_run_filter_skb(struct sock *sk,
 	/* compute pointers for the bpf prog */
 	bpf_compute_and_save_data_end(skb, &saved_data_end);
 
+	/* Use the validated prog_array instead of accessing cgrp->bpf.effective directly */
 	if (type == BPF_CGROUP_INET_EGRESS) {
 		ret = BPF_PROG_CGROUP_INET_EGRESS_RUN_ARRAY(
-			cgrp->bpf.effective[type], skb, __bpf_prog_run_save_cb);
+			prog_array, skb, __bpf_prog_run_save_cb);
 	} else {
-		ret = BPF_PROG_RUN_ARRAY(cgrp->bpf.effective[type], skb,
+		ret = BPF_PROG_RUN_ARRAY(prog_array, skb,
 					  __bpf_prog_run_save_cb);
 		ret = (ret == 1 ? 0 : -EPERM);
 	}
+	
+	rcu_read_unlock();
 	bpf_restore_data_end(skb, saved_data_end);
 	__skb_pull(skb, offset);
 	skb->sk = save_sk;
@@ -1092,10 +1111,23 @@ EXPORT_SYMBOL(__cgroup_bpf_run_filter_skb);
 int __cgroup_bpf_run_filter_sk(struct sock *sk,
 			       enum bpf_attach_type type)
 {
-	struct cgroup *cgrp = sock_cgroup_ptr(&sk->sk_cgrp_data);
+	struct bpf_prog_array *prog_array;
+	struct cgroup *cgrp;
 	int ret;
 
-	ret = BPF_PROG_RUN_ARRAY(cgrp->bpf.effective[type], sk, BPF_PROG_RUN);
+	cgrp = sock_cgroup_ptr(&sk->sk_cgrp_data);
+	if (unlikely(!cgrp))
+		return 0;
+
+	rcu_read_lock();
+	prog_array = rcu_dereference(cgrp->bpf.effective[type]);
+	if (unlikely(!prog_array)) {
+		rcu_read_unlock();
+		return 0;
+	}
+
+	ret = BPF_PROG_RUN_ARRAY(prog_array, sk, BPF_PROG_RUN);
+	rcu_read_unlock();
 	return ret == 1 ? 0 : -EPERM;
 }
 EXPORT_SYMBOL(__cgroup_bpf_run_filter_sk);
@@ -1124,6 +1156,7 @@ int __cgroup_bpf_run_filter_sock_addr(struct sock *sk,
 		.t_ctx = t_ctx,
 	};
 	struct sockaddr_storage unspec;
+	struct bpf_prog_array *prog_array;
 	struct cgroup *cgrp;
 	int ret;
 
@@ -1139,7 +1172,18 @@ int __cgroup_bpf_run_filter_sock_addr(struct sock *sk,
 	}
 
 	cgrp = sock_cgroup_ptr(&sk->sk_cgrp_data);
-	ret = BPF_PROG_RUN_ARRAY(cgrp->bpf.effective[type], &ctx, BPF_PROG_RUN);
+	if (unlikely(!cgrp))
+		return 0;
+
+	rcu_read_lock();
+	prog_array = rcu_dereference(cgrp->bpf.effective[type]);
+	if (unlikely(!prog_array)) {
+		rcu_read_unlock();
+		return 0;
+	}
+ 
+	ret = BPF_PROG_RUN_ARRAY(prog_array, &ctx, BPF_PROG_RUN);
+	rcu_read_unlock();
 
 	return ret == 1 ? 0 : -EPERM;
 }
@@ -1165,11 +1209,24 @@ int __cgroup_bpf_run_filter_sock_ops(struct sock *sk,
 				     struct bpf_sock_ops_kern *sock_ops,
 				     enum bpf_attach_type type)
 {
-	struct cgroup *cgrp = sock_cgroup_ptr(&sk->sk_cgrp_data);
+	struct bpf_prog_array *prog_array;
+	struct cgroup *cgrp;
 	int ret;
 
-	ret = BPF_PROG_RUN_ARRAY(cgrp->bpf.effective[type], sock_ops,
-				 BPF_PROG_RUN);
+	cgrp = sock_cgroup_ptr(&sk->sk_cgrp_data);
+	if (unlikely(!cgrp))
+		return 0;
+
+	rcu_read_lock();
+	prog_array = rcu_dereference(cgrp->bpf.effective[type]);
+	if (unlikely(!prog_array)) {
+		rcu_read_unlock();
+		return 0;
+	}
+
+	ret = BPF_PROG_RUN_ARRAY(prog_array, sock_ops,
+ 				 BPF_PROG_RUN);
+	rcu_read_unlock();
 	return ret == 1 ? 0 : -EPERM;
 }
 EXPORT_SYMBOL(__cgroup_bpf_run_filter_sock_ops);
