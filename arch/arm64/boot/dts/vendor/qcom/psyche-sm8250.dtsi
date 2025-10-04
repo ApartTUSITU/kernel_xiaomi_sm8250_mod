@@ -1192,3 +1192,10 @@ And public attribution of xiaomi platforms(like L3A and so and)
 		};
 	};
 };
+
+&soc {
+	lhbm_control: lhbm_control {
+		compatible = "xiaomi,lhbm";
+		status = "okay";
+	};
+};

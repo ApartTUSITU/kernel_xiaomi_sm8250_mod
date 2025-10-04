@@ -22,3 +22,13 @@ config TOUCHSCREEN_NEW_PEN_CONNECT_STRATEGY
 	  Say Y here if you enable new pen connect strategy.
 
 	  If unsure, say N.
+
+config TOUCHSCREEN_XIAOMI_LHBM
+	bool "Xiaomi LHBM Control"
+	depends on TOUCHSCREEN_XIAOMI_TOUCHFEATURE
+	help
+	  Say Y here if you want to enable LHBM control for Xiaomi devices.
+
+	  This adds sysfs interface to control Local HBM functionality.
+
+	  If unsure, say N.
