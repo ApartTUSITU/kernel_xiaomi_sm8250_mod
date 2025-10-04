@@ -42,9 +42,10 @@ static ssize_t lhbm_enable_show(struct device *dev,
                                char *buf)
 {
     struct xiaomi_lhbm_data *data = dev_get_drvdata(dev);
+    ssize_t ret;
     
     mutex_lock(&data->lock);
-    ssize_t ret = snprintf(buf, PAGE_SIZE, "%d\n", data->lhbm_enabled);
+    ret = snprintf(buf, PAGE_SIZE, "%d\n", data->lhbm_enabled);
     mutex_unlock(&data->lock);
     
     return ret;
