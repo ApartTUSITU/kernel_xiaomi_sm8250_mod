@@ -35,9 +35,9 @@
 #define SUS_SU_WITH_OVERLAY 1 /* deprecated */
 #define SUS_SU_WITH_HOOKS 2
 
-#define DEFAULT_SUS_MNT_ID 500000000 /* used by mount->mnt_id */
-#define DEFAULT_SUS_MNT_ID_FOR_KSU_PROC_UNSHARE 2000000000 /* used by vfsmount->susfs_mnt_id_backup */
-#define DEFAULT_SUS_MNT_GROUP_ID 5000000 /* used by mount->mnt_group_id */
+#define DEFAULT_SUS_MNT_ID 100000 /* used by mount->mnt_id */
+#define DEFAULT_SUS_MNT_ID_FOR_KSU_PROC_UNSHARE 1000000 /* used by vfsmount->susfs_mnt_id_backup */
+#define DEFAULT_SUS_MNT_GROUP_ID 1000 /* used by mount->mnt_group_id */
 
 /*
  * inode->i_state => storing flag 'INODE_STATE_'
