@@ -1813,7 +1813,7 @@ bool bpf_prog_array_compatible(struct bpf_array *array,
 	return ret;
 }
 
-static int bpf_check_tail_call(const struct bpf_prog *fp)
+int bpf_check_tail_call(const struct bpf_prog *fp)
 {
 	struct bpf_prog_aux *aux = fp->aux;
 	int i, ret = 0;
@@ -1837,6 +1837,7 @@ out:
 	mutex_unlock(&aux->used_maps_mutex);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bpf_check_tail_call);
 
 static void bpf_prog_select_func(struct bpf_prog *fp)
 {
@@ -2074,6 +2075,10 @@ int bpf_prog_array_update_at(struct bpf_prog_array *array, int index,
 {
 	struct bpf_prog_array_item *item;
 
+	/* Do not allow extension programs to be inserted into prog_array. */
+	if (prog && prog->type == BPF_PROG_TYPE_EXT)
+		return -EINVAL;
+
 	if (unlikely(index < 0))
 		return -EINVAL;
 
@@ -2124,6 +2129,12 @@ int bpf_prog_array_copy(struct bpf_prog_array *old_array,
 	new_prog_cnt = carry_prog_cnt;
 	if (include_prog)
 		new_prog_cnt += 1;
+
+	/* Disallow copying an extension program into a prog_array. */
+	if (include_prog && include_prog->type == BPF_PROG_TYPE_EXT) {
+		pr_warn_ratelimited("refusing to include BPF_PROG_TYPE_EXT in prog_array\n");
+		return -EINVAL;
+	}
 
 	/* Do we have any prog (not NULL) in the new array? */
 	if (!new_prog_cnt) {
