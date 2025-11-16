@@ -25,10 +25,6 @@
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
 
-#if defined(CONFIG_KSU) && defined(CONFIG_KSU_TRACEPOINT_HOOK)
-#include <../drivers/kernelsu/ksu_trace.h>
-#endif
-
 const struct file_operations generic_ro_fops = {
 	.llseek		= generic_file_llseek,
 	.read_iter	= generic_file_read_iter,
@@ -590,10 +586,17 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
 	return ret;
 }
 
+#ifdef CONFIG_KSU
+extern bool ksu_vfs_read_hook __read_mostly;
+extern int ksu_handle_sys_read(unsigned int fd, char __user **buf_ptr,
+			size_t *count_ptr);
+#endif
+
 SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
 {
-#if defined(CONFIG_KSU) && defined(CONFIG_KSU_TRACEPOINT_HOOK)
-    trace_ksu_trace_sys_read_hook(fd, &buf, &count);
+#ifdef CONFIG_KSU
+	if (unlikely(ksu_vfs_read_hook))
+		ksu_handle_sys_read(fd, &buf, &count);
 #endif
 	return ksys_read(fd, buf, count);
 }

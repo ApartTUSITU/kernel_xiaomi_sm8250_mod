@@ -95,7 +95,7 @@ echo "TARGET_DEVICE: $TARGET_DEVICE"
 
 if [ $KSU_ENABLE -eq 1 ]; then
     echo "KSU is enabled"
-    curl -LSs "https://raw.githubusercontent.com/ApartTUSITU/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-1.5.7
+    curl -LSs "https://github.com/liyafe1997/SukiSU-Ultra/raw/4ff14cf0051d04209c4abd5027d99d8e7780ef5b/kernel/setup.sh" | bash -s f4863b20cc8dc0f8cc67418980f022e43014b598
 else
     echo "KSU is disabled"
 fi
@@ -123,9 +123,9 @@ make $MAKE_ARGS ${TARGET_DEVICE}_defconfig
 if [ $KSU_ENABLE -eq 1 ]; then
     scripts/config --file out/.config \
     -e KSU \
-    -e KSU_TRACEPOINT_HOOK \
+    -e KSU_MANUAL_HOOK \
     -e KSU_SUSFS_HAS_MAGIC_MOUNT \
-    -e KSU_SUSFS_SUS_PATH \
+    -d KSU_SUSFS_SUS_PATH \
     -e KSU_SUSFS_SUS_MOUNT \
     -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT \
     -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT \
@@ -262,9 +262,9 @@ make $MAKE_ARGS ${TARGET_DEVICE}_defconfig
 if [ $KSU_ENABLE -eq 1 ]; then
     scripts/config --file out/.config \
     -e KSU \
-    -e KSU_TRACEPOINT_HOOK \
+    -e KSU_MANUAL_HOOK \
     -e KSU_SUSFS_HAS_MAGIC_MOUNT \
-    -e KSU_SUSFS_SUS_PATH \
+    -d KSU_SUSFS_SUS_PATH \
     -e KSU_SUSFS_SUS_MOUNT \
     -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT \
     -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT \
