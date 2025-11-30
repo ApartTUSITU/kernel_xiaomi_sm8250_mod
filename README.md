@@ -113,14 +113,14 @@ Join Starwing's QQ Group: **459094061**
 **中文:**  
 1. fork 本仓库(别忘了点个 Star~)  
 2. 进入 **Actions**  
-3. 找到 `Build All Devices Kernel (Matrix Parallel + Release)`，点击 `Run workflow`  
-4. (可选)你也可以仿照 `build-lmi-ksu.yml` 为单个机型编译内核  
+3. 如果你要为所有支持的设备编译内核，找到 `Build All Devices Kernel (Matrix Parallel + Release)`，点击 `Run workflow`  
+4. 如果你要为单个设备编译内核，找到 `Build Kernel`， 点击 `Run workflow` 并选择必要内容  
 
 **English:**  
 1. Fork this repo (don’t forget to leave a Star~)  
 2. Go to **Actions**  
-3. Find `Build All Devices Kernel (Matrix Parallel + Release)` and click **Run workflow**  
-4. (Optional) Create a workflow similar to `build-lmi-ksu.yml` to build for a single device  
+3. If you want to compile the kernel for all supported devices, find `Build All Devices Kernel (Matrix Parallel + Release)` and click `Run workflow`  
+4. If you want to compile the kernel for a single device, find `Build Kernel`, click `Run workflow`, and select the necessary options  
 
 ---
 
@@ -145,12 +145,12 @@ Join Starwing's QQ Group: **459094061**
 
    注意：`build.sh` 中启用了 `ccache`，路径是 `$HOME/.cache/ccache_mikernel`。可修改或删除。  
 
-2. 下载 [Proton Clang](https://github.com/kdrag0n/proton-clang/) 工具链:  
+2. 下载 [ZyC-Clang v15](https://github.com/ZyCromerZ/Clang/releases/tag/15.0.7-20251111-release) 工具链:  
    ```
-   mkdir proton-clang
-   cd proton-clang
-   wget https://github.com/kdrag0n/proton-clang/archive/refs/tags/20210522.zip
-   unzip 20210522.zip
+   mkdir zyc-clang
+   cd zyc-clang
+   wget https://github.com/ZyCromerZ/Clang/releases/download/15.0.7-20251111-release/Clang-15.0.7-20251111.tar.gz
+   tar -zxvf Clang-15.0.7-20251111.tar.gz
    cd ..
    ```
 
@@ -196,12 +196,12 @@ Join Starwing's QQ Group: **459094061**
 
    Note: `ccache` is enabled in `build.sh` (`$HOME/.cache/ccache_mikernel`). You may remove/modify it.  
 
-2. Download [Proton Clang](https://github.com/kdrag0n/proton-clang/) toolchain:  
+2. Download [ZyC-Clang v15](https://github.com/ZyCromerZ/Clang/releases/tag/15.0.7-20251111-release) toolchain:  
    ```
-   mkdir proton-clang
-   cd proton-clang
-   wget https://github.com/kdrag0n/proton-clang/archive/refs/tags/20210522.zip
-   unzip 20210522.zip
+   mkdir zyc-clang
+   cd zyc-clang
+   wget https://github.com/ZyCromerZ/Clang/releases/download/15.0.7-20251111-release/Clang-15.0.7-20251111.tar.gz
+   tar -zxvf Clang-15.0.7-20251111.tar.gz
    cd ..
    ```
 
