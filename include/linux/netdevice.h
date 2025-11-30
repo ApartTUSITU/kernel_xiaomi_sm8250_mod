@@ -599,6 +599,9 @@ struct netdev_queue {
 
 	/* Subordinate device that the queue has been assigned to */
 	struct net_device	*sb_dev;
+#ifdef CONFIG_XDP_SOCKETS
+	struct xdp_umem         *umem;
+#endif
 /*
  * write-mostly part
  */
@@ -736,6 +739,9 @@ struct netdev_rx_queue {
 	struct kobject			kobj;
 	struct net_device		*dev;
 	struct xdp_rxq_info		xdp_rxq;
+#ifdef CONFIG_XDP_SOCKETS
+	struct xdp_umem                 *umem;
+#endif
 
 	ANDROID_KABI_RESERVE(1);
 	ANDROID_KABI_RESERVE(2);
