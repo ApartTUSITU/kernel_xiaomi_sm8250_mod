@@ -240,11 +240,6 @@ static int vfs_ustat(dev_t dev, struct kstatfs *sbuf)
 	if (!s)
 		return -EINVAL;
 
-#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-	if (unlikely(s->s_root->d_inode->i_mapping->flags & BIT_SUS_MOUNT)) {
-		return -EINVAL;
-	}
-#endif
 	err = statfs_by_dentry(s->s_root, sbuf);
 	drop_super(s);
 	return err;

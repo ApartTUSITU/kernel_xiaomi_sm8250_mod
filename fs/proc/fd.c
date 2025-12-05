@@ -62,13 +62,13 @@ static int seq_show(struct seq_file *m, void *v)
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 	mnt = real_mount(file->f_path.mnt);
 	if (likely(susfs_is_current_proc_umounted()) &&
-				mnt->mnt_id >= DEFAULT_KSU_MNT_ID)
+		mnt->mnt_id >= DEFAULT_KSU_MNT_ID)
 	{
 		for (; mnt->mnt_id >= DEFAULT_KSU_MNT_ID; mnt = mnt->mnt_parent) { }
 	}
 	seq_printf(m, "pos:\t%lli\nflags:\t0%o\nmnt_id:\t%i\n",
-			(long long)file->f_pos, f_flags,
-			mnt->mnt_id);
+			   (long long)file->f_pos, f_flags,
+			   mnt->mnt_id);
 #else
 	seq_printf(m, "pos:\t%lli\nflags:\t0%o\nmnt_id:\t%i\n",
 		   (long long)file->f_pos, f_flags,
