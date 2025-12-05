@@ -724,3 +724,4 @@ CONFIG_CRYPTO_AES_ARM64_BS=m
 CONFIG_BPF_LSM=y
 CONFIG_BPF_PRELOAD=y
 CONFIG_LSM="lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmour,bpf"
+CONFIG_XDP_SOCKETS=y
