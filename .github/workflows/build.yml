@@ -1,0 +1,89 @@
+name: Build Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      device:
+        description: '选择设备代号'
+        required: true
+        default: 'lmi'
+        type: choice
+        options:
+          - psyche
+          - umi
+          - munch
+          - lmi
+          - cmi
+          - cas
+          - apollo
+          - alioth
+          - elish
+          - enuma
+          - dagu
+          - pipa
+      include_ksu:
+        description: '是否包含KSU'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential git curl wget bison flex zip bc cpio libssl-dev ccache python-is-python3 tar
+
+    # 生成短哈希（修复 substr() 报错）
+    - name: Set short commit SHA
+      id: vars
+      run: echo "SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_ENV
+
+    - name: Cache ccache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ccache_mikernel
+        key: ${{ runner.os }}-ccache-${{ github.event.inputs.device }}-${{ github.event.inputs.include_ksu }}-${{ env.SHORT_SHA }}
+        restore-keys: |
+          ${{ runner.os }}-ccache-${{ github.event.inputs.device }}-${{ github.event.inputs.include_ksu }}-
+          ${{ runner.os }}-ccache-${{ github.event.inputs.device }}-
+          ${{ runner.os }}-ccache-
+
+    - name: Setup zyc-clang toolchain
+      run: |
+        mkdir -p $HOME/zyc-clang
+        cd $HOME/zyc-clang
+        wget https://github.com/ZyCromerZ/Clang/releases/download/15.0.7-20251111-release/Clang-15.0.7-20251111.tar.gz
+        tar -zxvf Clang-15.0.7-20251111.tar.gz
+        cd $GITHUB_WORKSPACE
+
+    - name: Build kernel
+      run: |
+        if [ "${{ github.event.inputs.include_ksu }}" = "true" ]; then
+          bash build.sh ${{ github.event.inputs.device }} ksu
+        else
+          bash build.sh ${{ github.event.inputs.device }}
+        fi
+
+    - name: Show ccache stats
+      run: ccache -s
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ github.event.inputs.device }}${{ github.event.inputs.include_ksu == 'true' && '-ksu' || '' }}-kernel
+        path: |
+          *.zip
+          out/arch/arm64/boot/Image
+          out/arch/arm64/boot/dtb
