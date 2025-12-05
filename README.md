@@ -1,149 +1,228 @@
-# About this repo
 
-[中文](#中文)
+# ApartTUSITU's Xiaomi SM8250 Kernel  
 
-## English
-This repo (`android15-lineage22-mod` branch) is based on [Lineage OS 22.1 xiaomi sm8250 kernel source](https://github.com/LineageOS/android_kernel_xiaomi_sm8250).
+## 目录 / Table of Contents
+- [简介 / Introduction](#简介--introduction)  
+- [特性 / Features](#特性--features)  
+- [注意事项 / Notes](#注意事项--notes)  
+- [社区 / Community](#社区--community)  
+- [支持的设备 / Supported Devices](#支持的设备--supported-devices)  
+- [其他特性 / Other Features](#其他特性--other-features)  
+- [构建方法 / Build Instructions](#构建方法--build-instructions)  
+  - [快速构建 / Quick Build](#快速构建--quick-build)  
+  - [手动构建 / Manual Build](#手动构建--manual-build)  
 
-Originally this repo (`android12-stable-mod` or `android14-stable-mod` branch) is fork from [UtsavBalar1231's repo](https://github.com/UtsavBalar1231/kernel_xiaomi_sm8250), but the `android14-stable` branch has freeze problem when the device sleep for a while or wake up. So now I switched to lineage22 codebase. The MIUI features code and some parts of the drivers is still copied from UtsavBalar1231's branch.
+---
 
-So still Thanks to [@UtsavBalar1231](https://github.com/UtsavBalar1231/)!
+## 简介 / Introduction
+**中文:**  
+该 repo 主要基于 [Starwing's Xiaomi SM8250 Kernel Source](https://github.com/liyafe1997/kernel_xiaomi_sm8250_mod)。如果想了解 [电量卡在1%的问题](https://github.com/liyafe1997/Xiaomi-fix-battery-one-percent)，请前往上面的仓库获取更多信息。  
 
-The main purpose of maintaining and building this kernel is to fix [this battery stuck at 1% problem](https://github.com/liyafe1997/Xiaomi-fix-battery-one-percent), and provide [SukiSU](https://github.com/ShirkNeko/SukiSU-Ultra)(A KernelSU fork with KPM support) & [SUSFS](https://github.com/sidex15/susfs4ksu-module) integrated pre-built image(flashable anykernel3 zip). Also provides a more intuitive and easy-to-use build script and build guide that allow you to try to build by yourself.
+**English:**  
+This repo is mainly based on [Starwing's Xiaomi SM8250 Kernel Source](https://github.com/liyafe1997/kernel_xiaomi_sm8250_mod).  
+If you want to know more about the [battery stuck at 1% issue](https://github.com/liyafe1997/Xiaomi-fix-battery-one-percent), please check the repo above for more details.  
 
-For using the SukiSU, you can install the SukiSU manager APK from [SukiSU Github Release](https://github.com/ShirkNeko/SukiSU-Ultra/releases). For the SUSFS module see [susfs4ksu-module Gihub Release](https://github.com/sidex15/susfs4ksu-module/releases).
+---
 
-(The devices affected by the "1% battery bug" are: alioth, apollo, lmi, thyme, umi, pipa. Because they all use the PM8150, aka Qualcomm fuel gauge GEN4. For the other devices are not affected by that bug, you can use this kernel for KernelSU purpose, as a replacement of the orginal stock kernel. Also, as the people tested, this kernel NoKernelSU version is good for applying [APatch](https://github.com/bmax121/APatch)).
+## 特性 / Features
+**中文:**  
+本内核支持 [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra)(一个 KernelSU 的 fork，支持 KPM) & [SUSFS](https://github.com/sidex15/susfs4ksu-module)。请自行安装 [SukiSU Ultra 的管理器](https://github.com/ShirkNeko/SukiSU-Ultra/releases)，以及根据需要刷上 SUSFS 模块。NoKernelSU 版本支持应用 Magisk 和 APatch。  
 
-The pre-built kernel image/zip is built on the `android15-lineage22-mod` branch. It should works on both stock MIUI and third-party AOSP based Android 11-15 ROMs. You are welcomed to give feedback (Issues/Pull Requests)!
+Release 里的编译好的内核成品由 `android16-aptusitu-new` 分支编译，应当能在原版 MIUI/HyperOS 和第三方的基于 AOSP 的各种 Android11-16 的 ROM 上使用。欢迎大家尝试并反馈(提 Issue 或 Pull Requests)! 酷友们到 [酷安的这个帖子](https://www.coolapk.com/feed/67088487) 讨论或反馈，也可以给我私信反馈!  
 
-Note: The zip does not include the `dtbo.img` and it will not replace your `dtbo` partition. It is recommanded to keep the stock `dtbo` or the `dtbo` from your third-party rom (If the builder comfirmed it works well). Since there are some problems with the `dtbo.img` which built from this source, one of them is the screen will suddently goes to the highest brightness when shut try to shut off the screen in the lock screen. If you had flashed any other third-party kernels, and you got some weird problem, you should keep an eye to check your `dtbo` has been replaced or not. 
+**English:**  
+This kernel supports [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra) (a fork of KernelSU with KPM support) & [SUSFS](https://github.com/sidex15/susfs4ksu-module).  
+Please install the [SukiSU Ultra Manager](https://github.com/ShirkNeko/SukiSU-Ultra/releases) yourself, and flash the SUSFS module as needed.  
+The NoKernelSU version supports Magisk and APatch.  
 
-**Notice: If you are using MIUI/HyperOS please use the MIUI varient. Because the display driver is different between MIUI and AOSP, if you are using MIUI/HyperOS but installed the AOSP version, the display will not work and only black screen. If you only see a black screen after installed this kernel, please check if you installed the correct varient or not!**
+The prebuilt kernel in the **Release** section is compiled from the `android16-aptusitu-new` branch, and should work on stock MIUI/HyperOS as well as third-party AOSP-based ROMs for Android 11–16.  
+Feedback is welcome (via Issues or Pull Requests)! Coolapk users can join the discussion in [this post](https://www.coolapk.com/feed/67088487), or send me private feedback.  
 
-Supported devices:
-| Code Name | Device Name                          |
-|-----------|--------------------------------------|
-| psyche    | Xiaomi Mi 12X                        |
-| thyme     | Xiaomi Mi 10S                        |
-| umi       | Xiaomi Mi 10                         |
-| munch     | Poco F4 / Redmi K40S                 |
-| lmi       | Redmi K30 Pro                        |
-| cmi       | Xiaomi Mi 10 Pro                     |
-| cas       | Xiaomi Mi 10 Ultra                   |
-| apollo    | Xiaomi Mi 10T / Redmi K30S Ultra     |
-| alioth    | Xiaomi Mi 11X / POCO F3 / Redmi K40  |
-| elish     | Xiaomi Pad 5 Pro                     |
-| enuma     | Xiaomi Pad 5 Pro 5G                  |
-| dagu      | Xiaomi Pad 5 Pro 12.4                |
-| pipa      | Xiaomi Pad 6                         |
+---
 
-Other Features/Improvement of this Kernel:
-1. Support USB Serial (CH340/FTDI/PL2303/OTI6858/TI/SPCP8X5/QT2/UPD78F0730/CP210X).
-2. Support EROFS.
-3. F2FS realtime discard enabled for better TRIM the flash.
-4. Support CANBus and USB CAN adapter (like CANable).
-5. Support LZ4, LZ4HC, ZSTD compression algorithms for ZRAM.
+## 注意事项 / Notes
+**中文:**  
+提示：该内核的 zip 包不包含 `dtbo.img`，并且不会刷你的 dtbo 分区。推荐使用原厂的 `dtbo`，或者来自第三方系统包自带的 dtbo(如果原作者确认那好用的话)。因为该源码 build 出来的 `dtbo.img` 有些小问题，比如在锁屏界面上尝试熄屏时，屏幕会突然闪一下到最高亮度。如果你刷过其它第三方内核，或者遇到一些奇怪的问题，建议检查一下你的 `dtbo` 是否被替换过。  
 
-## 中文
-该repo (`android15-lineage22-mod` 分支)主要基于[Lineage OS 22.1 xiaomi sm8250 kernel source](https://github.com/LineageOS/android_kernel_xiaomi_sm8250)。
+**注意：如果你在用 HyperOS/MIUI 请刷 MIUI 的版本，AOSP 版因为 display 驱动不同，在 HyperOS/MIUI 上屏幕无法正常显示，如果刷内核之后开机黑屏，请先检查你是不是正在用着 HyperOS/MIUI 但是刷了 AOSP 版，默认不受理关于这条的反馈。**  
 
-原来这个repo(即`android12-stable-mod`/`android14-stable-mod`分支)是fork自[UtsavBalar1231的仓库](https://github.com/UtsavBalar1231/kernel_xiaomi_sm8250)，但切到`android14-stable`分支的时候，发现那套代码有睡死问题（202408的几个release），所以现在切到了基于lineage22的代码来搞。MIUI特性的代码以及部分的设备驱动抠自UtsavBalar1231的仓库。
+**English:**  
+**Note**: The kernel zip package does **not** contain `dtbo.img` and will not flash your dtbo partition.  
+It is recommended to use the stock `dtbo`, or one from the bundled files of a third-party ROM (if the original author confirms it works well).  
+The `dtbo.img` built from this source has some issues—for example, on the lock screen, the display may suddenly flash to max brightness when trying to turn off the screen.  
+If you have flashed other third-party kernels or encounter strange issues, please check whether your `dtbo` has been replaced.  
 
-所以仍然感谢 [@UtsavBalar1231](https://github.com/UtsavBalar1231/)！
+**Warning**: If you are using HyperOS/MIUI, please flash the **MIUI version**.  
+The AOSP version has different display drivers, which will cause the screen not to display properly on HyperOS/MIUI.  
+If you get a black screen after flashing, check if you are on HyperOS/MIUI but flashed the AOSP version.  
+Feedback about this specific issue will not be accepted by default.  
 
-维护和编译这个内核的主要目的是想修复[电量卡在1%的问题](https://github.com/liyafe1997/Xiaomi-fix-battery-one-percent)，以及提供带[SukiSU](https://github.com/ShirkNeko/SukiSU-Ultra)(一个KernelSU的fork，支持KPM) & [SUSFS](https://github.com/sidex15/susfs4ksu-module)的预编译好的内核（请自行安装[SukiSU的管理器](https://github.com/ShirkNeko/SukiSU-Ultra/releases)以及根据需要刷上SUSFS模块）。以及再提供一个更直观和易用的编译脚本和README，方便大家自己折腾和修改，编译自己的内核！
+---
 
-（其中受“1%电量bug”影响的设备有：alioth, apollo, lmi, thyme, umi, pipa，因为它们都用了PM8150即高通的GEN4电量计。其它不受此bug影响的设备大可把这个内核当成个带SukiSU & SUSFS的官核平替，如果你想找一个带KernelSU的内核的话。并且据大家测试，该内核不带KernelSU版本可以应用[APatch](https://github.com/bmax121/APatch)）
+## 社区 / Community
+**中文:**  
+欢迎加入 Starwing's QQ 交流群: **459094061**。  
 
-Release里的编译好的内核成品由`android15-lineage22-mod`分支编译，应当能在原版MIUI和第三方的基于AOSP的各种Android11-15的ROM上使用。欢迎大家尝试并反馈（提Issue或Pull Requests）！酷友们到[酷安的这个帖子](https://www.coolapk.com/feed/56813047)讨论或反馈，也可以给我私信反馈！
+**English:**  
+Join Starwing's QQ Group: **459094061**  
 
-注意：该内核的zip包不包含`dtbo.img`，并且不会刷你的dtbo分区。推荐使用原厂的`dtbo`，或者来自第三方系统包自带的dtbo（如果原作者确认那好用的话）。因为该源码build出来的`dtbo.img`有些小问题，比如在锁屏界面上尝试熄屏时，屏幕会突然闪一下到最高亮度。如果你刷过其它第三方内核，或者遇到一些奇怪的问题，建议检查一下你的`dtbo`是否被替换过。
+---
 
-**注意：如果你在用HyperOS/MIUI请刷MIUI的版本，AOSP版因为display驱动不同，在HyperOS/MIUI上屏幕无法正常显示，如果刷内核之后开机黑屏，请先检查你是不是正在用着HyperOS/MIUI但是刷了AOSP版**
+## 支持的设备 / Supported Devices
+| 设备代号 / Codename | 设备名称 / Device Name            |
+|---------------------|----------------------------------|
+| psyche              | Xiaomi 12X                        |
+| umi                 | Xiaomi 10                         |
+| munch               | Redmi K40S                        |
+| lmi                 | Redmi K30 Pro / POCO F2 Pro       |
+| cmi                 | Xiaomi 10 Pro                     |
+| cas                 | Xiaomi 10 Ultra                   |
+| apollo              | Xiaomi 10T / Redmi K30S Ultra     |
+| alioth              | Xiaomi 11X / POCO F3 / Redmi K40  |
+| elish               | Xiaomi Pad 5 Pro                  |
+| enuma               | Xiaomi Pad 5 Pro 5G               |
+| dagu                | Xiaomi Pad 5 Pro 12.4             |
+| pipa                | Xiaomi Pad 6                      |
 
-度盘备用下载链接：https://pan.baidu.com/share/init?surl=11ocz7ggZ79gzRfWvsdbJA&pwd=ty58 （建议优先从Github Release下载）
+---
 
-欢迎加入内测QQ群: 459094061
+## 其他特性 / Other Features
+1. **中文:** 支持 USB 串口驱动(CH340/FTDI/PL2303/OTI6858/TI/SPCP8X5/QT2/UPD78F0730/CP210X)  
+   **English:** Support for USB serial drivers (CH340 / FTDI / PL2303 / OTI6858 / TI / SPCP8X5 / QT2 / UPD78F0730 / CP210X)  
 
-支持的设备:
-| 设备代号  | 设备名称                           |
-|-----------|----------------------------------|
-| psyche    | 小米12X                           |
-| thyme     | 小米10S                           |
-| umi       | 小米10                            |
-| munch     | 红米K40S                          |
-| lmi       | 红米K30 Pro                       |
-| cmi       | 小米10 Pro                        |
-| cas       | 小米10 Ultra                      |
-| apollo    | 小米10T / 红米K30S Ultra          |
-| alioth    | 小米11X / POCO F3 / 红米K40       |
-| elish     | 小米平板5 Pro                     |
-| enuma     | 小米平板5 Pro 5G                  |
-| dagu      | 小米平板5 Pro 12.4                |
-| pipa      | 小米平板6                         |
+2. **中文:** 支持 EROFS  
+   **English:** Support for EROFS  
 
-该内核的其他特性/改进:
-1. 支持USB串口驱动（CH340/FTDI/PL2303/OTI6858/TI/SPCP8X5/QT2/UPD78F0730/CP210X）
-2. 支持EROFS
-3. F2FS开启了realtime discard以更好的TRIM闪存
-4. 支持 CANBus 和 USB CAN （如 CANable）适配器（一些折腾嵌入式的可能会喜欢这个）
-5. zRAM 支持 LZ4、LZ4HC、ZSTD 压缩算法
+3. **中文:** F2FS 开启了 realtime discard 以更好地 TRIM 闪存  
+   **English:** F2FS with realtime discard enabled for better flash TRIM  
 
-# How to build
-1. Prepair the basic build environment. 
+4. **中文:** 支持 CANBus 和 USB CAN (如 CANable) 适配器  
+   **English:** Support for CANBus and USB CAN adapters (e.g. CANable)  
 
-    You have to have the basic common toolchains, such as `git`, `make`, `curl`, `bison`, `flex`, `zip`, etc, and some other packages.
-    In Debian/Ubuntu, you can
-    ```
-    sudo apt install build-essential git curl wget bison flex zip bc cpio libssl-dev ccache
-    ```
-    And also, you have to have `python` (only `python3` is not enough). you can install the apt package `python-is-python3`.
+5. **中文:** zRAM 支持 LZ4、LZ4HC、ZSTD 压缩算法  
+   **English:** zRAM support for LZ4, LZ4HC, and ZSTD compression  
 
-    In RHEL/RPM based OS, you can
-    ```
-    sudo yum groupinstall 'Development Tools'
-    sudo yum install wget bc openssl-devel ccache
-    ```
+6. **中文:** 向后移植 5.10 BPF  
+   **English:** Backported BPF from 5.10  
 
-    Notice: `ccache` is enabled in `build.sh` for speed up the compiling. `CCACHE_DIR` has been set as `$HOME/.cache/ccache_mikernel` in `build.sh`. If you don't like you can remove or modify it.
+---
 
-2. Download [proton-clang] compiler toolchain
+## 构建方法 / Build Instructions
 
-    You have to have `aarch64-linux-gnu`, `arm-linux-gnueabi`, `clang`. [Proton Clang](https://github.com/kdrag0n/proton-clang/) is a good prebuilt clang cross compiler toolchain.
+### 快速构建 / Quick Build
+**中文:**  
+1. fork 本仓库(别忘了点个 Star~)  
+2. 进入 **Actions**  
+3. 如果你要为所有支持的设备编译内核，找到 `Build All Devices Kernel (Matrix Parallel + Release)`，点击 `Run workflow`  
+4. 如果你要为单个设备编译内核，找到 `Build Kernel`， 点击 `Run workflow` 并选择必要内容  
 
-    The default toolchain path is `$HOME/proton-clang/proton-clang-20210522/bin` which is set in `build.sh`. If you are using another location please change `TOOLCHAIN_PATH` in `build.sh`.
+**English:**  
+1. Fork this repo (don’t forget to leave a Star~)  
+2. Go to **Actions**  
+3. If you want to compile the kernel for all supported devices, find `Build All Devices Kernel (Matrix Parallel + Release)` and click `Run workflow`  
+4. If you want to compile the kernel for a single device, find `Build Kernel`, click `Run workflow`, and select the necessary options  
 
-    ```
-    mkdir proton-clang
-    cd proton-clang
-    wget https://github.com/kdrag0n/proton-clang/archive/refs/tags/20210522.zip
-    unzip 20210522.zip
-    cd ..
-    ```
+---
 
-3. Build
+### 手动构建 / Manual Build
+**中文:**  
+1. 准备基本构建环境。  
+   需要常用工具链 `git`、`make`、`curl`、`bison`、`flex`、`zip` 等，以及一些软件包。  
+   - 在 Debian/Ubuntu:  
+   ```
+   sudo apt install build-essential git curl wget bison flex zip bc cpio libssl-dev ccache
+   ```
+   还需要 `python` (仅有 `python3` 不够)，可安装:  
+   ```
+   sudo apt install python-is-python3
+   ```
 
-    Build without KernelSU: 
-    ```
-    bash build.sh TARGET_DEVICE
-    ```
-    
-    Build with KernelSU:
-    ```
-    bash build.sh TARGET_DEVICE ksu
-    ```
+   - 在 RHEL/RPM 系统:  
+   ```
+   sudo yum groupinstall 'Development Tools'
+   sudo yum install wget bc openssl-devel ccache
+   ```
 
-    For example, build for lmi (Redmi K30 Pro/POCO F2 Pro) without KernelSU:
-    ```
-    bash build.sh lmi
-    ````
+   注意：`build.sh` 中启用了 `ccache`，路径是 `$HOME/.cache/ccache_mikernel`。可修改或删除。  
 
-    For example, build for umi (Mi 10) with KernelSU:
-    ```
-    bash build.sh umi ksu
-    ```
+2. 下载 [ZyC-Clang v15](https://github.com/ZyCromerZ/Clang/releases/tag/15.0.7-20251111-release) 工具链:  
+   ```
+   mkdir zyc-clang
+   cd zyc-clang
+   wget https://github.com/ZyCromerZ/Clang/releases/download/15.0.7-20251111-release/Clang-15.0.7-20251111.tar.gz
+   tar -zxvf Clang-15.0.7-20251111.tar.gz
+   cd ..
+   ```
 
-    And also, here is a `buildall.sh` can build for all supported models at once.
+3. 构建:  
+   - 不使用 KernelSU:  
+     ```
+     bash build.sh TARGET_DEVICE
+     ```
+   - 使用 KernelSU:  
+     ```
+     bash build.sh TARGET_DEVICE ksu
+     ```
 
+   示例:  
+   - lmi (Redmi K30 Pro/POCO F2 Pro) 不使用 KernelSU:  
+     ```
+     bash build.sh lmi
+     ```
+   - umi (Xiaomi 10) 使用 KernelSU:  
+     ```
+     bash build.sh umi ksu
+     ```
 
+   另外，`buildall.sh` 可一次性为所有设备构建。  
+
+**English:**  
+1. Prepare the build environment.  
+   You need `git`, `make`, `curl`, `bison`, `flex`, `zip`, etc.  
+   - On Debian/Ubuntu:  
+   ```
+   sudo apt install build-essential git curl wget bison flex zip bc cpio libssl-dev ccache
+   ```
+   You also need `python` (not just `python3`):  
+   ```
+   sudo apt install python-is-python3
+   ```
+
+   - On RHEL/RPM-based OS:  
+   ```
+   sudo yum groupinstall 'Development Tools'
+   sudo yum install wget bc openssl-devel ccache
+   ```
+
+   Note: `ccache` is enabled in `build.sh` (`$HOME/.cache/ccache_mikernel`). You may remove/modify it.  
+
+2. Download [ZyC-Clang v15](https://github.com/ZyCromerZ/Clang/releases/tag/15.0.7-20251111-release) toolchain:  
+   ```
+   mkdir zyc-clang
+   cd zyc-clang
+   wget https://github.com/ZyCromerZ/Clang/releases/download/15.0.7-20251111-release/Clang-15.0.7-20251111.tar.gz
+   tar -zxvf Clang-15.0.7-20251111.tar.gz
+   cd ..
+   ```
+
+3. Build:  
+   - Without KernelSU:  
+     ```
+     bash build.sh TARGET_DEVICE
+     ```
+   - With KernelSU:  
+     ```
+     bash build.sh TARGET_DEVICE ksu
+     ```
+
+   Example:  
+   - lmi (Redmi K30 Pro/POCO F2 Pro) without KernelSU:  
+     ```
+     bash build.sh lmi
+     ```
+   - umi (Xiaomi 10) with KernelSU:  
+     ```
+     bash build.sh umi ksu
+     ```
+
+   Additionally, `buildall.sh` can build for all supported devices at once.  
