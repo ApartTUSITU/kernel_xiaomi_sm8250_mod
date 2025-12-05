@@ -8,7 +8,7 @@
 #include <linux/path.h>
 #include <linux/susfs_def.h>
 
-#define SUSFS_VERSION "v1.5.5"
+#define SUSFS_VERSION "v1.5.11"
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
 #define SUSFS_VARIANT "NON-GKI"
 #else
@@ -29,12 +29,24 @@
 struct st_susfs_sus_path {
 	unsigned long                    target_ino;
 	char                             target_pathname[SUSFS_MAX_LEN_PATHNAME];
+	unsigned int					 i_uid;
 };
 
-struct st_susfs_sus_path_hlist {
-	unsigned long                    target_ino;
+struct st_susfs_sus_path_list {
+	struct list_head                 list;
+	struct st_susfs_sus_path         info;
 	char                             target_pathname[SUSFS_MAX_LEN_PATHNAME];
-	struct hlist_node                node;
+	size_t                           path_len;
+};
+
+struct st_android_data_path {
+	char                             pathname[SUSFS_MAX_LEN_PATHNAME];
+	bool                             is_inited;
+};
+
+struct st_sdcard_path {
+	char                             pathname[SUSFS_MAX_LEN_PATHNAME];
+	bool                             is_inited;
 };
 #endif
 
@@ -115,20 +127,13 @@ struct st_susfs_open_redirect_hlist {
 };
 #endif
 
-/* sus_su */
-#ifdef CONFIG_KSU_SUSFS_SUS_SU
-struct st_sus_su {
-	int         mode;
-};
-#endif
-
 /***********************/
 /* FORWARD DECLARATION */
 /***********************/
 /* sus_path */
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
+int susfs_set_i_state_on_external_dir(char __user* user_info, int cmd);
 int susfs_add_sus_path(struct st_susfs_sus_path* __user user_info);
-int susfs_sus_ino_for_filldir64(unsigned long ino);
 #endif
 /* sus_mount */
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
@@ -175,11 +180,10 @@ int susfs_spoof_cmdline_or_bootconfig(struct seq_file *m);
 int susfs_add_open_redirect(struct st_susfs_open_redirect* __user user_info);
 struct filename* susfs_get_redirected_path(unsigned long ino);
 #endif
-/* sus_su */
-#ifdef CONFIG_KSU_SUSFS_SUS_SU
-int susfs_get_sus_su_working_mode(void);
-int susfs_sus_su(struct st_sus_su* __user user_info);
-#endif
+
+int susfs_get_enabled_features(char __user* buf, size_t bufsize);
+void susfs_set_avc_log_spoofing(bool enabled);
+
 /* susfs_init */
 void susfs_init(void);
 
