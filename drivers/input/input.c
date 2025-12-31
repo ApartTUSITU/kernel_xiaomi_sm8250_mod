@@ -387,8 +387,8 @@ static void input_handle_event(struct input_dev *dev,
 			       unsigned int type, unsigned int code, int value)
 {
 	int disposition = input_get_disposition(dev, type, code, &value);
- 
-#ifdef CONFIG_KSU
+
+#ifdef CONFIG_KSU_SUSFS
 	if (unlikely(ksu_input_hook))
 		ksu_handle_input_handle_event(&type, &code, &value);
 #endif

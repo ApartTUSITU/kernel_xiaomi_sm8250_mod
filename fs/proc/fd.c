@@ -58,7 +58,7 @@ static int seq_show(struct seq_file *m, void *v)
 
 	if (ret)
 		return ret;
-	
+
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 	mnt = real_mount(file->f_path.mnt);
 	if (likely(susfs_is_current_proc_umounted()) &&
